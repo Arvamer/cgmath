@@ -17,6 +17,7 @@ use std::fmt;
 
 use angle::{Angle, Rad};
 use approx::ApproxEq;
+use euler::Euler;
 use matrix::SquareMatrix;
 use matrix::{Matrix2, Matrix3};
 use num::BaseFloat;
@@ -84,18 +85,10 @@ pub trait Rotation2<S: BaseFloat>: Rotation<Point2<S>>
 pub trait Rotation3<S: BaseFloat>: Rotation<Point3<S>>
                                  + Into<Matrix3<S>>
                                  + Into<Basis3<S>>
-                                 + Into<Quaternion<S>> {
+                                 + Into<Quaternion<S>>
+                                 + From<Euler<Rad<S>>> {
     /// Create a rotation using an angle around a given axis.
     fn from_axis_angle(axis: Vector3<S>, angle: Rad<S>) -> Self;
-
-    /// Create a rotation from a set of euler angles.
-    ///
-    /// # Parameters
-    ///
-    /// - `x`: the angular rotation around the `x` axis (pitch).
-    /// - `y`: the angular rotation around the `y` axis (yaw).
-    /// - `z`: the angular rotation around the `z` axis (roll).
-    fn from_euler(x: Rad<S>, y: Rad<S>, z: Rad<S>) -> Self;
 
     /// Create a rotation from an angle around the `x` axis (pitch).
     #[inline]
@@ -316,10 +309,6 @@ impl<S: BaseFloat> Rotation3<S> for Basis3<S> {
         Basis3 { mat: Matrix3::from_axis_angle(axis, angle) }
     }
 
-    fn from_euler(x: Rad<S>, y: Rad<S>, z: Rad<S>) -> Basis3<S> {
-        Basis3 { mat: Matrix3::from_euler(x, y ,z) }
-    }
-
     fn from_angle_x(theta: Rad<S>) -> Basis3<S> {
         Basis3 { mat: Matrix3::from_angle_x(theta) }
     }
@@ -330,6 +319,17 @@ impl<S: BaseFloat> Rotation3<S> for Basis3<S> {
 
     fn from_angle_z(theta: Rad<S>) -> Basis3<S> {
         Basis3 { mat: Matrix3::from_angle_z(theta) }
+    }
+}
+
+impl<A: Angle> From<Euler<A>> for Basis3<<A as Angle>::Unitless> where
+    A: Into<Rad<<A as Angle>::Unitless>>,
+{
+    /// Create a three-dimensional rotation matrix from a set of euler angles.
+    fn from(src: Euler<A>) -> Basis3<A::Unitless> {
+        Basis3 {
+            mat: Matrix3::from(src),
+        }
     }
 }
 
